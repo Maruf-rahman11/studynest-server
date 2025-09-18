@@ -8,6 +8,7 @@ require('dotenv').config()
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port = process.env.PORT || 5000;
 
+
 app.use(cors ());
 app.use(express.json());
 
@@ -54,7 +55,7 @@ const verifyFireBaseToken = async (req, res, next) => {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
     
 
     const coursesCollection = client.db('studynest-web').collection('courses')

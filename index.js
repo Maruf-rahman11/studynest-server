@@ -12,6 +12,7 @@ const port = process.env.PORT || 5000;
 app.use(cors ());
 app.use(express.json());
 
+const stripe = require('stripe')(process.env.PAYMENT_GATEWAY_KEY);
 
 
 
@@ -75,11 +76,11 @@ async function run() {
       const result = await applicantCollection.insertOne(newApplicant);
       res.send(result);
     })
-    app.get('/applicants',verifyFireBaseToken, async(req,res)=>{
+    app.get('/applicants', async(req,res)=>{
       const email = req.query.email;
-      if(email !== req.decoded.email){
-        return res.status(403).send({ message: 'forbidden access' })
-      }
+      // if(email !== req.decoded.email){
+      //   return res.status(403).send({ message: 'forbidden access' })
+      // }
       
   
       const query = {
@@ -99,6 +100,41 @@ async function run() {
       }
       res.send(result);
     })
+    app.post("/create-payment-intent", async (req, res) => {
+      const { amount, currency = "usd" } = req.body; // amount in cents
+      try {
+        const paymentIntent = await stripe.paymentIntents.create({
+          amount,
+          currency,
+          payment_method_types: ["card"],
+        });
+        res.send({ clientSecret: paymentIntent.client_secret });
+      } catch (err) {
+        console.error(err);
+        res.status(500).send({ error: "PaymentIntent creation failed" });
+      }
+    });
+    // PATCH /applicants/update-status/:email
+app.patch("/applicants/update-status/:email", async (req, res) => {
+  try {
+    const email = req.params.email;
+    const { status } = req.body;
+    console.log(email , status)
+   
+    const filter = { email: email };
+    const updateDoc = { $set: { status: status } };
+
+    const result = await applicantCollection.updateOne(filter, updateDoc);
+
+  
+
+    res.json({ message: "Status updated successfully", result });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 
 
 
